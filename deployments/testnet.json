@@ -1,0 +1,9 @@
+{
+  "chainId": 9800,
+  "deployer": "0x4610d211A185ABB8860362A3cFE8d005a30E14E7",
+  "moveNotice": "0x4275d4514c3b268A985975a97A9855556A8f90D8",
+  "guardedPay": "0x78e20EC4A434C2a306928885c9a4f20f99C28f49",
+  "block": "10569909",
+  "moveNoticeTx": "0x3f5779f7bd98813bf738b7e118481030c980cf6ae24520d9fd6991d03bf43372",
+  "guardedPayTx": "0xce6d2e6482abb6dc9f8c36f20bd7645087dc2595ff338dfadb3097aaf8f5e4dc"
+}
