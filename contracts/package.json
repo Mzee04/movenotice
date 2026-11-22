@@ -1,0 +1,10 @@
+{
+  "name": "@movenotice/contracts",
+  "private": true,
+  "scripts": {
+    "setup": "node setup.mjs",
+    "build": "forge build --offline",
+    "test": "forge test --offline",
+    "deploy:testnet": "cd .. && pnpm deploy:testnet"
+  }
+}

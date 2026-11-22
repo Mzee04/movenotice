@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+broadcast/
+cache/
+out/
+node_modules/
+dist/
+deployments/*.local.json
+notices/*
+!notices/.gitkeep
+.setup/
+contracts/lib/
+contracts/.toolchain/
+.DS_Store

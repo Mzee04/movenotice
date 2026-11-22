@@ -1,0 +1,32 @@
+{
+  "name": "movenotice",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "setup:forge": "node contracts/setup.mjs",
+    "test:forge": "cd contracts && forge test --offline",
+    "test:cli": "vitest run --project cli",
+    "test:web": "vitest run --project web",
+    "test": "pnpm test:forge && vitest run",
+    "build": "(cd contracts && forge build --offline) && tsc --noEmit && pnpm --filter @movenotice/web build",
+    "coverage:forge": "cd contracts && forge coverage --offline",
+    "dev": "pnpm --filter @movenotice/web dev",
+    "notice": "node --import tsx --env-file-if-exists=.env cli/index.ts",
+    "deploy:testnet": "node --env-file-if-exists=.env contracts/deploy.mjs"
+  },
+  "dependencies": {
+    "@cosmjs/stargate": "0.39.0",
+    "@qorechain/evm": "0.14.0",
+    "@qorechain/pqc": "0.2.3",
+    "@qorechain/sdk": "0.14.0",
+    "viem": "~2.53.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.0"
+  }
+}
