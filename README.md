@@ -64,7 +64,7 @@ The deploy command saves confirmed public addresses, deployment block and transa
 - `MoveFinalized(account, to, effectiveAt)`
 - `Paid(sender, to, amount, movePending)`
 
-Move events index `account` and `to`. Derive a move’s status from its events and chain time, or call `resolve`. `resolveFinal` follows up to eight final links and stops before revisiting an address. A returned endpoint can still have an outgoing link when traversal reached a cycle or the cap. The web lookup checks the last 50,000 blocks at most in requests spanning at most 10,000 blocks each and caches the pages in memory. A configured deployment block bounds this search.
+Move events index `account` and `to`. Derive a move’s status from its events and chain time, or call `resolve`. `resolveFinal` follows up to eight final links and stops before revisiting an address. A returned endpoint can still have an outgoing link when traversal reached a cycle or the cap. The web lookup pages back to `VITE_DEPLOYMENT_BLOCK` when set and otherwise searches the latest 50,000 blocks. It stops after finding 12 events or reading 30 pages, with at most 10,000 blocks per request. Pages are cached in memory.
 
 ## Run locally
 
@@ -84,8 +84,8 @@ Open the local address printed by Vite. Without deployed addresses the app shows
 
 Use a throwaway coin-60 account. In QoreX, choose **Add an Ethereum account (coin 60)**. Keep real funds and credentials out of the project.
 
-1. Copy `.env.example` to a local `.env`. Set `QORE_MNEMONIC` for the coin-60 account at index 0, or set `PRIVATE_KEY` and its matching `QORE_PQC_RECOVERY_CODE`. For a fresh raw key, run `pnpm notice recovery-code` privately and store the code offline, apart from the private key. Reuse the same code for that account.
-2. Run `pnpm notice status` to view the `qor1…` address. Fund it with test QOR using the [testnet faucet](https://dashboard.qorechain.io/faucet).
+1. Copy `.env.example` to a local `.env`. Set `QORE_MNEMONIC` and the coin-60 account’s `QORE_ACCOUNT_INDEX`, or set `PRIVATE_KEY` and its matching `QORE_PQC_RECOVERY_CODE`. The mnemonic index defaults to 0 and accepts integers through 2147483647. For a fresh raw key, run `pnpm notice recovery-code` privately and store the code offline, apart from the private key. Reuse the same code for that account.
+2. Confirm the 0x address from `pnpm notice status` is exactly the coin-60 account shown in QoreX. For mnemonic credentials, change `QORE_ACCOUNT_INDEX` and check again if the addresses differ. Fund the matching `qor1…` address with test QOR. [Testnet faucet](https://dashboard.qorechain.io/faucet)
 3. Run `pnpm notice register`, then `pnpm notice status`. Verify that the key is registered, proven and matches the local key. Registration is idempotent.
 4. Run `pnpm notice window:deploy` followed immediately by `pnpm deploy:testnet`. The deploy window allows 600 blocks, three transactions and 2 QOR of value plus fees. The script uses a 600-second minimum delay by default. If deployment is refused, inspect status and the local receipts before retrying.
 5. Run `pnpm notice window:scoped`. This replaces the deploy window with 1,200 blocks, eight transactions, a 2 QOR value-and-fee budget and the two deployed addresses as its allowed targets. Reopen it if it expires or runs out of capacity.
@@ -101,15 +101,18 @@ pnpm notice resolve <qor1-or-0x-address>
 pnpm notice simulate-pay <recipient> 0.01
 ```
 
-The CLI writes only public action data into `notices/`. Treat a signed JSON file as permission to relay that action until its nonce or expiry makes it stale. Import it into the web app to review its exact message and simulate. QoreX uses the CLI for submission. For other testnet wallets, the browser uses a request with no transaction data to look for evidence that the provider implements sending. Wallets can refuse that probe or a subsequent send. The CLI remains available. The window and the sender’s test QOR are still required for a write.
+The CLI writes only public action data into `notices/`. Anyone can relay a signed file. The only ways to invalidate it are to let it expire or to advance the nonce. Keep expiries short and unused files private. CLI signing defaults to one hour and caps expiry at 24 hours after the latest block time. Import it into the web app to review its exact message and simulate. QoreX uses the CLI for submission. For other testnet wallets, the browser uses a request with no transaction data to look for evidence that the provider implements sending. Wallets can refuse that probe or a subsequent send. The CLI remains available. The window and the sender’s test QOR are still required for a write.
 
 ## Limits
 
 - Use the board as a first check and verify a changed address with its owner through a trusted channel. A typo can become a signed destination, and the delay helps when someone is watching.
 - Protection for posting and cancelling depends on a proven registered key. The first registration of an unregistered account can be seized by someone holding its classical key. A mnemonic can recover both keys, so anyone who obtains it can recover both.
-- Wallets and agents opt into checking MoveNotice. Direct transfers can still go to a stale address.
-- QoreX currently supplies an address for reads. The local CLI handles ML-DSA-87 signing and holds the key outside the browser. The required precompiles are active on Testnet. [QoreX integrations](https://docs.qorechain.io/developer-tools/qorex-integrations/)
-- The ten-minute demo delay makes the flow watchable. Allow 48–72 hours for actual operations so more watchers have time to respond. One ML-DSA-87 signature adds about 4.6 KB of calldata, and verification alone costs roughly 85–90k gas.
+- A final move is irreversible. The account can only move on to another address.
+- Cancel early. A cancellation sent near the deadline may arrive too late.
+- Wallets and agents opt into checking MoveNotice. Direct transfers can still go to a stale address. The CLI and web app block payments to system addresses through `0xffff`.
+- QoreX currently supplies an address for reads. The local CLI handles ML-DSA-87 signing and holds the key outside the browser. [QoreX integrations](https://docs.qorechain.io/developer-tools/qorex-integrations/)
+- The MoveNotice precompiles are active only on QoreChain Testnet. They are inactive on mainnet today. [QoreChain precompiles](https://docs.qorechain.io/developer-guide/evm-precompiles/)
+- The ten-minute demo delay makes the flow watchable. Allow 48–72 hours for actual operations so more watchers have time to respond. One ML-DSA-87 signature adds about 4.6 KB of calldata. Verification alone costs about 90–95k gas, based on a contract call measured on QoreChain Testnet on 22 November 2026.
 - The current evidence is local automated testing. A human security audit and the two QCAI runs are pending.
 
 ## Fest and credits
@@ -117,6 +120,6 @@ The CLI writes only public action data into `notices/`. Treat a signed JSON file
 Solo entry in the **Post-Quantum dApp** category for Build Before Q-Day. Submissions close **2 December 2026 at 23:59 UTC**. The [demo plan](DEMO.md), [AI usage](AI_USAGE.md), [test results](TEST_RESULTS.md) and [audit workflow](audit/README.md) are in this repository. [Fest rules](https://build.qorechain.io/rules) · [Track conditions](https://build.qorechain.io/prizes)
 
 - Scaffolding used the official `create-qorechain-dapp@0.14.0` **foundry** and **viem-wagmi** templates. Precompile mocking, raw action signing and native window handling follow the Apache-2.0 QDayVault workshop patterns. [QoreChain docs](https://docs.qorechain.io/) · [QDayVault workshop](https://github.com/qorechain/build-before-qday/tree/main/workshop-2/01-qday-vault)
-- `@qorechain/sdk` supplies account, key, notice signing and native transaction helpers. `@qorechain/evm` supplies the testnet definition and window reads. `@qorechain/pqc` supplies real ML-DSA-87 in the test suite. `@qorechain/qorex-rainbowkit` provides the QoreX EIP-1193 discovery helper. wagmi and RainbowKit are the original web template’s wallet-stack libraries and peer dependencies of the wallet kit. [QoreChain developer packages](https://docs.qorechain.io/developer-tools/qorex-integrations/)
+- `@qorechain/sdk` supplies account, key, notice signing and native transaction helpers. `@qorechain/evm` supplies the testnet definition and window reads. `@qorechain/pqc` supplies real ML-DSA-87 in the test suite. wagmi and RainbowKit came with the viem-wagmi template. The final app uses only the EIP-1193 discovery helper from `@qorechain/qorex-rainbowkit` for QoreX. [QoreChain developer packages](https://docs.qorechain.io/developer-tools/qorex-integrations/)
 - Foundry, forge-std and Solidity compile, deploy and test the contracts. viem supplies EVM encoding, reads, simulation and CLI sending. CosmJS Stargate provides the native transport. [Foundry](https://getfoundry.sh/) · [Solidity](https://soliditylang.org/) · [viem](https://viem.sh/) · [CosmJS](https://github.com/cosmos/cosmjs)
 - Vite and its React plugin, React and React DOM, TypeScript, tsx, Vitest, Testing Library and jsdom provide the build and test stack. The cover uses project artwork rendered from SVG with the system image tool. [Vite](https://vite.dev/) · [React](https://react.dev/) · [TypeScript](https://www.typescriptlang.org/) · [tsx](https://tsx.is/) · [Vitest](https://vitest.dev/) · [Testing Library](https://testing-library.com/) · [jsdom](https://github.com/jsdom/jsdom)

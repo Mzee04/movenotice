@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { deriveUnifiedAccount } from "@qorechain/sdk";
+import { parseAccountIndex } from "../cli/account-index.mjs";
 
 const staged = "deployments/testnet.local.json";
 const manifest = "deployments/testnet.json";
@@ -11,9 +12,16 @@ async function run() {
     console.error("MoveNotice deploys to QoreChain Testnet.");
     return false;
   }
+  let index;
+  try {
+    index = parseAccountIndex(process.env.QORE_ACCOUNT_INDEX);
+  } catch (error) {
+    console.error(error.message);
+    return false;
+  }
   const mnemonic = process.env.QORE_MNEMONIC?.trim();
   const key = mnemonic
-    ? (await deriveUnifiedAccount(mnemonic, 0)).privateKey
+    ? (await deriveUnifiedAccount(mnemonic, index)).privateKey
     : process.env.PRIVATE_KEY?.trim();
   if (!key || !/^0x[\da-f]{64}$/i.test(key) || /^0x0+$/.test(key)) {
     console.error("Set QORE_MNEMONIC or a valid PRIVATE_KEY for the funded testnet account.");

@@ -177,7 +177,8 @@ export function PostMove({ contract, wallet }: { contract?: Address; wallet?: Wa
 
 export function MoveRecord({ move, onCancel }: { move: MoveView; onCancel: () => void }) {
   const now = useChainClock(move.timestamp);
-  const pending = move.pendingTo !== zeroAddress && move.pendingAt > now;
+  const secondsLeft = move.pendingAt - now;
+  const pending = move.pendingTo !== zeroAddress && secondsLeft > 0n;
   const elapsed = move.pendingTo !== zeroAddress && move.pendingAt <= now;
   const status = elapsed ? 2 : move.status;
   const to = elapsed ? move.pendingTo : move.to;
@@ -193,9 +194,12 @@ export function MoveRecord({ move, onCancel }: { move: MoveView; onCancel: () =>
           </dl>}
       {pending && <div className="countdown">
         <span>{status === 2 ? "Next move activates in" : "Cancellation window"}</span>
-        <strong>{remaining(move.pendingAt - now)}</strong>
+        <strong>{remaining(secondsLeft)}</strong>
         {status === 2 && <code>{move.pendingTo}</code>}
       </div>}
+      {pending && secondsLeft < 120n && <Feedback tone="warning">
+        Less than 2 minutes left. A cancellation sent now may arrive after the deadline.
+      </Feedback>}
       {pending || status === 2 ? <button type="button" className="button secondary fit" disabled={!pending} onClick={onCancel}>Cancel move</button> : null}
       {!pending && status === 2 && <p className="help">The cancellation window has closed.</p>}
     </div>

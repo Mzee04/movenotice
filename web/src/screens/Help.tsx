@@ -5,8 +5,8 @@ export function HowItWorks() {
     <Section title="How a move becomes effective">
       <ol className="help-steps">
         <li><strong>Post.</strong> The account owner signs a target, delay, nonce and expiry with ML-DSA-87. Anyone can relay the signed notice.</li>
-        <li><strong>Review.</strong> Watchers can see the pending notice. The owner can sign a cancellation before the delay ends.</li>
-        <li><strong>Resolve.</strong> The board returns the new address after the delay. GuardedPay then refuses payments to the old address and shows the suggested recipient.</li>
+        <li><strong>Review.</strong> Watchers can see the pending notice. The owner can sign a cancellation before the delay ends. Cancel early. A cancellation sent near the deadline may arrive too late.</li>
+        <li><strong>Resolve.</strong> The board returns the new address after the delay. GuardedPay then refuses payments to the old address and shows the suggested recipient. A final move is irreversible. The account can only move on to another address.</li>
       </ol>
     </Section>
     <Section title="Two checks protect each action">
@@ -16,7 +16,7 @@ export function HowItWorks() {
     </Section>
     <Section title="What to verify yourself">
       <p>Treat the board as a first check. Verify the target with the recipient through a trusted channel. Typos can still reach the board, and the delay helps when someone is watching for changes.</p>
-      <p>Accounts without a registered key can be taken over at first registration. Payment tools must choose to consult the board. This demo uses testnet precompiles and a ten-minute delay. Allow 48–72 hours for real use so watchers have time to respond.</p>
+      <p>Accounts without a registered key can be taken over at first registration. Payment tools must choose to consult the board. The MoveNotice precompiles are active only on QoreChain Testnet. They are inactive on mainnet today. This demo uses a ten-minute delay. Allow 48–72 hours for real use so watchers have time to respond.</p>
     </Section>
   </div>;
 }

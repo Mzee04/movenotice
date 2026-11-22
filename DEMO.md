@@ -4,8 +4,10 @@ Record on QoreChain Testnet with throwaway accounts and test QOR. The explorer s
 
 ## Prepare before recording
 
-- Complete the testnet deployment in the [README](README.md). Have the contract addresses, explorer tabs, cover and the two QCAI reports ready before recording the final version.
 - Choose funded coin-60 accounts **A1** and **A2** with proven keys. Choose distinct valid recipients **B1** and **B2**. Keep A1 at status NONE. Set `B1`, `B2` and `A2` as shell variables containing only those public addresses.
+- Fund A1, A2 and the deployer with test QOR from the faucet. A1 can also serve as the deployer. Plan funding around the faucet’s 24-hour limit. [Testnet faucet](https://dashboard.qorechain.io/faucet)
+- Confirm the 0x address from `pnpm notice status` is exactly the coin-60 account shown in QoreX. For mnemonic credentials, change `QORE_ACCOUNT_INDEX` and check again if the addresses differ. Repeat the check when switching accounts.
+- Complete the testnet deployment in the [README](README.md). Have the contract addresses, explorer tabs, cover and the two QCAI reports ready before recording the final version.
 - With A2 as the configured CLI account, run `pnpm notice register`, `pnpm notice window:scoped` and `pnpm notice post "$B2" 600` at least ten minutes before recording. Then run `pnpm notice resolve "$A2"` and check for FINAL. Save the post transaction link. `pnpm notice finalize "$A2"` optionally gives the event list an explicit finalization event.
 - Restore A1’s credential configuration, connect A1 in the browser and run `pnpm notice window:scoped`. Confirm A1’s address, matching proven key and live window with `pnpm notice status`. Capture the pre-post command `pnpm notice attack-post "$B1"` and its `BLOCKED: BadPqcSignature` output for the later attack segment. It is captured before posting because an active pending move would fail the pending notice check first.
 - Keep a known-good simulated result and successful testnet transaction link ready for each write. If the live transaction takes too long, show its simulation and cut to the prepared result. Describe a simulation and a confirmed transaction as separate steps.

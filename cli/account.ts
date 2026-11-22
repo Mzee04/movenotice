@@ -7,18 +7,20 @@ import {
 } from "@qorechain/sdk";
 import { hexToBytes, type Address, type Hex } from "viem";
 import { QORE_REST, QORE_RPC } from "../shared/messages";
+import { parseAccountIndex } from "./account-index.mjs";
 
 const CHAIN = "qorechain-diana";
 const FEE = { amount: [{ denom: "uqor", amount: "100000" }], gas: "800000" };
 type Messages = Parameters<EthNativeSigner["sign"]>[0]["messages"];
 
-export async function localAccount(): Promise<UnifiedAccount> {
+export async function localAccount(): Promise<UnifiedAccount & { mnemonicIndex?: number }> {
+  const index = parseAccountIndex(process.env.QORE_ACCOUNT_INDEX);
   const mnemonic = process.env.QORE_MNEMONIC?.trim();
   const key = process.env.PRIVATE_KEY?.trim();
   const recoveryCode = process.env.QORE_PQC_RECOVERY_CODE?.trim();
   if (mnemonic) {
     try {
-      return await deriveUnifiedAccount(mnemonic, 0);
+      return { ...await deriveUnifiedAccount(mnemonic, index), mnemonicIndex: index };
     } catch {
       throw new Error("QORE_MNEMONIC could not be used to derive a coin-60 account.");
     }

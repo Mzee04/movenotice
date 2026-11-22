@@ -1,22 +1,23 @@
 import { useRef, useState, type FormEvent } from "react";
-import { type Address } from "viem";
+import { zeroAddress, type Address } from "viem";
 import { nativeAddress, readTarget } from "../../../shared/addresses";
-import { describeError, followMove, readMove, recentEvents, type BoardEvent, type MoveView } from "../lib/chain";
+import { describeError, lookupMove, recentEvents, type BoardEvent, type MoveView } from "../lib/chain";
 import { Feedback, Section, StatusPill, TxLink, remaining, useChainClock, utc } from "../ui";
 
 export function Lookup({ contract }: { contract?: Address }) {
   const [input, setInput] = useState("");
   const [address, setAddress] = useState<Address>();
   const [move, setMove] = useState<MoveView>();
-  const [path, setPath] = useState<readonly [Address, number]>();
+  const [path, setPath] = useState<Awaited<ReturnType<typeof lookupMove>>[1]>();
   const [events, setEvents] = useState<BoardEvent[]>();
   const [eventError, setEventError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const request = useRef(0);
   const now = useChainClock(move?.timestamp);
-  const effective = move && move.status === 1 && move.effectiveAt <= now;
-  const status = move && (effective ? 2 : move.status);
+  const hasPending = move !== undefined && move.pendingTo !== zeroAddress;
+  const activated = move !== undefined && hasPending && move.pendingAt <= now;
+  const status = move && (activated || (move.status === 1 && move.effectiveAt <= now) ? 2 : move.status);
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,10 +32,10 @@ export function Lookup({ contract }: { contract?: Address }) {
     try {
       const account = readTarget(input);
       setAddress(account);
-      const [record, hops] = await Promise.all([readMove(contract, account), followMove(contract, account)]);
+      const [record, finalPath] = await lookupMove(contract, account);
       if (request.current !== id) return;
       setMove(record);
-      setPath(hops);
+      setPath(finalPath);
       void recentEvents(contract, account).then((result) => {
         if (request.current === id) setEvents(result);
       }).catch(() => {
@@ -64,11 +65,15 @@ export function Lookup({ contract }: { contract?: Address }) {
         <dl className="facts">
           <div><dt>Account</dt><dd><code>{address}</code><code>{nativeAddress(address)}</code></dd></div>
           {status !== 0 && <>
-            <div><dt>Target</dt><dd><code>{move.to}</code></dd></div>
-            <div><dt>Effective at</dt><dd>{utc(move.effectiveAt)}{status === 1 && <span className="muted"> · {remaining(move.effectiveAt - now)}</span>}</dd></div>
+            <div><dt>Target</dt><dd><code>{activated ? move.pendingTo : move.to}</code></dd></div>
+            <div><dt>Effective at</dt><dd>{utc(activated ? move.pendingAt : move.effectiveAt)}{status === 1 && <span className="muted"> · {remaining(move.effectiveAt - now)}</span>}</dd></div>
           </>}
-          {path && <div><dt>Final path at lookup</dt><dd><code>{path[0]}</code><span>{path[1]} {path[1] === 1 ? "hop" : "hops"}</span></dd></div>}
+          {path && <div><dt>Final path at lookup</dt><dd><code>{path.endpoint}</code><span>{path.hops} {path.hops === 1 ? "hop" : "hops"}</span></dd></div>}
         </dl>
+        {move.status === 2 && hasPending && !activated && <p className="help">
+          Next move pending to <code>{move.pendingTo}</code>, activates {utc(move.pendingAt)} ({remaining(move.pendingAt - now)}).
+        </p>}
+        {path?.endpointMoved && <Feedback tone="warning">The path stops here because it loops or is too long. Check this address before sending.</Feedback>}
         {status === 0 && <Feedback tone="good">No move notice found. Use this as a first check and verify the address with its owner.</Feedback>}
         <h3 className="event-heading">Recent events</h3>
         {eventError && <p className="help" role="status">Event history is temporarily unavailable. Try the lookup again.</p>}

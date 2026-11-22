@@ -2,17 +2,18 @@ import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { qorechainTestnet } from "@qorechain/evm";
 import { generatePqcRecoveryCode, generatePqcKeypair, pqcSign } from "@qorechain/sdk";
-import { BaseError, createPublicClient, createWalletClient, hexToBytes, http, toHex, type Address, type Hex } from "viem";
+import { createPublicClient, createWalletClient, hexToBytes, http, toHex, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { noticeAbi, payAbi, statuses } from "../shared/abi";
 import { nativeAddress, readAddress, readTarget } from "../shared/addresses";
 import { onchainMessage, simulateAction } from "../shared/contractActions";
 import { contractRevert, movedRecipient } from "../shared/errors";
-import { PRACTICAL_EXPIRY, QORE_EXPLORER, TESTNET_ID, unsigned, type Action } from "../shared/messages";
+import { TESTNET_ID, unsigned, type Action } from "../shared/messages";
 import { readSignedNotice } from "../shared/notices";
-import { readAmount } from "../shared/payment";
+import { readAmount, readPaymentRecipient } from "../shared/payment";
 import { accountStatus, localAccount, openWindow, register, requireOwnedKey } from "./account";
-import { logError } from "./logger";
+import { signatureExpiry } from "./expiry";
+import { printHash, reportCommandError } from "./logger";
 
 const pub = createPublicClient({
   chain: qorechainTestnet,
@@ -39,12 +40,6 @@ async function needContract(which: "notice" | "pay"): Promise<Address> {
   const result = (await deployment())[which];
   if (!result) throw new Error("Set the contract address or create deployments/testnet.json.");
   return result;
-}
-
-function printHash(hash: string) {
-  if (!/^(?:0x)?[0-9a-f]{64}$/i.test(hash)) throw new Error("Unexpected transaction hash format.");
-  console.log(`Transaction ${hash}`);
-  console.log(`${QORE_EXPLORER}/tx/${hash}`);
 }
 
 async function settled(hash: Hex) {
@@ -89,12 +84,7 @@ async function prepare(kind: Action["kind"], account: Address, args: string[]) {
   if (expectedNonce !== undefined && unsigned(expectedNonce, "nonce", 256) !== nonce) {
     throw new Error("The nonce changed. Refresh the message preview.");
   }
-  const relative = options.get("--valid");
-  const absolute = options.get("--valid-until");
-  const validUntil = absolute === undefined
-    ? timestamp + (relative === undefined ? PRACTICAL_EXPIRY : unsigned(relative, "validity"))
-    : unsigned(absolute, "expiry");
-  if (validUntil <= timestamp || validUntil >= 1n << 64n) throw new Error("Choose a future signature expiry.");
+  const validUntil = signatureExpiry(timestamp, options.get("--valid"), options.get("--valid-until"));
   const base = { account, contract, chainId: TESTNET_ID, nonce, validUntil };
   let action: Action = { ...base, kind: "cancel" };
   if (kind === "post") {
@@ -176,7 +166,7 @@ async function attack(kind: Action["kind"], target?: string) {
 }
 
 async function pay(to: string, amount: string, send: boolean) {
-  const recipient = readTarget(to ?? "");
+  const recipient = readPaymentRecipient(to ?? "");
   const value = readAmount(amount ?? "");
   const address = await needContract("pay");
   const client = send ? await wallet() : undefined;
@@ -202,6 +192,7 @@ const help = `pnpm notice <command>
   sign-post <to> <delaySeconds> [--valid 3600]
   sign-cancel [--valid 3600]
   Signing also accepts --valid-until <unixSeconds> and --nonce <expectedNonce>.
+  Expiry must be within 24 hours of the latest block time.
   submit <file.json> | post <to> <delaySeconds> | cancel
   resolve <account> | finalize <account>
   pay <to> <amountQOR> | simulate-pay <to> <amountQOR>
@@ -211,7 +202,8 @@ const commands = {
   async help() { console.log(help); },
   async status() {
     const owner = await localAccount();
-    console.log(`Account ${owner.evm} / ${owner.cosmos}`);
+    const index = owner.mnemonicIndex === undefined ? "" : ` (mnemonic index ${owner.mnemonicIndex})`;
+    console.log(`Account ${owner.evm} / ${owner.cosmos}${index}`);
     const { key, keyMatches, window } = await accountStatus(owner);
     console.log(`PQC registered ${key.registered}; proven ${key.possessionProven === true}; local key matches ${keyMatches ?? "unknown"}`);
     console.log(window.found
@@ -284,14 +276,6 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-  const revert = contractRevert(error);
-  if (revert) logError(`REFUSED: ${revert.errorName}`);
-  else if (error instanceof BaseError && /evm window|authori[sz]ation window|invalid parameters|codespace.?[:=]?.?pqc.*\b(26|27|28)\b/i.test(error.message)) {
-    logError("EVM admission failed. Check pnpm notice status and reopen the correct window.");
-  } else if (error instanceof BaseError) {
-    logError("Testnet RPC or transaction request failed. Check status and the configured contract addresses.");
-  } else {
-    logError(error instanceof Error && error.constructor === Error ? error.message : "Command failed. Check account or testnet status.");
-  }
+  reportCommandError(error);
   process.exitCode = 1;
 });

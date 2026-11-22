@@ -16,8 +16,6 @@ function configured(input?: string) {
 
 export const board = configured(import.meta.env.VITE_MOVENOTICE_ADDRESS);
 export const guard = configured(import.meta.env.VITE_GUARDEDPAY_ADDRESS);
-const deploymentBlock = /^\d+$/.test(import.meta.env.VITE_DEPLOYMENT_BLOCK || "")
-  ? BigInt(import.meta.env.VITE_DEPLOYMENT_BLOCK) : 0n;
 
 export async function keyStatus(account: Address) {
   const [registered, algorithm, key, proven] = await client.readContract({
@@ -50,8 +48,7 @@ export type MoveView = {
   timestamp: bigint;
 };
 
-export async function readMove(address: Address, account: Address): Promise<MoveView> {
-  const { number: blockNumber, timestamp } = await client.getBlock();
+async function readMoveAt(address: Address, account: Address, blockNumber: bigint, timestamp: bigint): Promise<MoveView> {
   const [[to, status, effectiveAt], [pendingTo, postedAt, pendingAt]] = await Promise.all([
     client.readContract({ address, abi: noticeAbi, functionName: "resolve", args: [account], blockNumber }),
     client.readContract({ address, abi: noticeAbi, functionName: "pending", args: [account], blockNumber }),
@@ -59,8 +56,24 @@ export async function readMove(address: Address, account: Address): Promise<Move
   return { to, status, effectiveAt, pendingTo, pendingAt, postedAt, timestamp };
 }
 
-export function followMove(address: Address, account: Address) {
-  return client.readContract({ address, abi: noticeAbi, functionName: "resolveFinal", args: [account] });
+export async function readMove(address: Address, account: Address): Promise<MoveView> {
+  const { number, timestamp } = await client.getBlock();
+  return readMoveAt(address, account, number, timestamp);
+}
+
+async function followMove(address: Address, account: Address, blockNumber: bigint) {
+  const [endpoint, hops] = await client.readContract({
+    address, abi: noticeAbi, functionName: "resolveFinal", args: [account], blockNumber,
+  });
+  const endpointMoved = await client.readContract({
+    address, abi: noticeAbi, functionName: "isMoved", args: [endpoint], blockNumber,
+  });
+  return { endpoint, hops, endpointMoved };
+}
+
+export async function lookupMove(address: Address, account: Address) {
+  const { number, timestamp } = await client.getBlock();
+  return Promise.all([readMoveAt(address, account, number, timestamp), followMove(address, account, number)]);
 }
 
 type Draft = { kind: "post"; to: Address; delay: bigint } | { kind: "cancel" };
@@ -131,10 +144,11 @@ function readEventPage(address: Address, account: Address, fromBlock: bigint, to
 
 export async function recentEvents(address: Address, account: Address) {
   const tip = await client.getBlockNumber();
-  const earliest = tip > 5n * eventPage ? tip - 5n * eventPage + 1n : 0n;
-  const floor = deploymentBlock > earliest ? deploymentBlock : earliest;
+  const recentFloor = tip >= 5n * eventPage ? tip - 5n * eventPage + 1n : 0n;
+  const configuredBlock = import.meta.env.VITE_DEPLOYMENT_BLOCK;
+  const floor = configuredBlock && /^\d+$/.test(configuredBlock) ? BigInt(configuredBlock) : recentFloor;
   const results: BoardEvent[] = [];
-  for (let to = tip; to >= floor && results.length < 12;) {
+  for (let to = tip, pages = 0; to >= floor && results.length < 12 && pages < 30; pages++) {
     // Align pages to fixed block boundaries so earlier pages survive a refresh.
     const boundary = to - to % eventPage;
     const from = floor > boundary ? floor : boundary;

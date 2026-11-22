@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { type Address, type Hex } from "viem";
-import { readTarget } from "../../../shared/addresses";
 import { movedRecipient } from "../../../shared/errors";
-import { readAmount } from "../../../shared/payment";
+import { readAmount, readPaymentRecipient } from "../../../shared/payment";
 import { checkPayment, client, describeError, simulatePayment, type PaymentCheck } from "../lib/chain";
 import { sendWithWallet, type Wallet } from "../lib/wallet";
 import { CopyCommand, Feedback, Section, StatusPill, TxLink, remaining, useChainClock, utc } from "../ui";
@@ -35,7 +34,7 @@ export function SendScreen({ board, guard, wallet }: { board?: Address; guard?: 
     reset();
     setBusy(true);
     try {
-      const to = readTarget(input);
+      const to = readPaymentRecipient(input);
       const value = readAmount(amount);
       const state = await checkPayment(guard, board, to);
       setChecked({ recipient: to, amount: amount.trim(), value, result: state });
