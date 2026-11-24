@@ -25,6 +25,25 @@ contract NestedPayment {
     }
 }
 
+contract FinalizingPayment {
+    GuardedPay private immutable guard;
+    address payable private immutable movedAccount;
+    bytes public nestedRevert;
+
+    constructor(GuardedPay guard_, address payable movedAccount_) {
+        guard = guard_;
+        movedAccount = movedAccount_;
+    }
+
+    receive() external payable {
+        guard.notice().finalize(movedAccount);
+        try guard.pay{value: msg.value}(movedAccount) {}
+        catch (bytes memory reason) {
+            nestedRevert = reason;
+        }
+    }
+}
+
 contract GuardedPayTest is NoticeFixture {
     GuardedPay internal guard;
 
@@ -83,6 +102,23 @@ contract GuardedPayTest is NoticeFixture {
         emit GuardedPay.Paid(address(recipient), B, 1 ether, false);
         guard.pay{value: 1 ether}(payable(address(recipient)));
         assertEq(B.balance, 1 ether);
+        assertEq(address(guard).balance, 0);
+    }
+
+    function test_pay_reentrantFinalizeCannotBypassMovedCheck() public {
+        _post(A, B);
+        vm.warp(START + DELAY);
+        assertEq(notice.finalTo(A), address(0));
+        FinalizingPayment recipient = new FinalizingPayment(guard, payable(A));
+
+        guard.pay{value: 1 ether}(payable(address(recipient)));
+
+        assertEq(recipient.nestedRevert(), abi.encodeWithSelector(GuardedPay.AccountMoved.selector, A, B));
+        assertEq(notice.finalTo(A), B);
+        _resolved(A, B, MoveNotice.Status.FINAL, START + DELAY);
+        assertEq(address(recipient).balance, 1 ether);
+        assertEq(A.balance, 0);
+        assertEq(B.balance, 0);
         assertEq(address(guard).balance, 0);
     }
 

@@ -206,6 +206,35 @@ contract MoveNoticeTest is NoticeFixture {
         notice.finalize(A);
     }
 
+    function test_finalizeTwice_revertsAndPreservesFinalTarget() public {
+        _post(A, B);
+        vm.warp(START + DELAY);
+        vm.prank(B);
+        notice.finalize(A);
+
+        vm.expectRevert(MoveNotice.NoPendingMove.selector);
+        vm.prank(C);
+        notice.finalize(A);
+
+        assertEq(notice.finalTo(A), B);
+        assertEq(notice.nonces(A), 1);
+        _resolved(A, B, MoveNotice.Status.FINAL, START + DELAY);
+    }
+
+    function test_finalizeAfterCancel_revertsAndLeavesAccountUnmoved() public {
+        _post(A, B);
+        vm.warp(START + DELAY - 1);
+        _cancel(A);
+
+        vm.warp(START + DELAY);
+        vm.expectRevert(MoveNotice.NoPendingMove.selector);
+        notice.finalize(A);
+
+        assertEq(notice.finalTo(A), address(0));
+        assertEq(notice.nonces(A), 2);
+        _resolved(A, address(0), MoveNotice.Status.NONE, 0);
+    }
+
     function test_newNoticeBlockedWhilePending() public {
         _post(A, B);
         vm.expectRevert(MoveNotice.MovePending.selector);
