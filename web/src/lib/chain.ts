@@ -1,5 +1,5 @@
 import { evmWindowStatus, qorechainTestnet } from "@qorechain/evm";
-import { createPublicClient, decodeEventLog, encodeFunctionData, http, padHex, toEventSelector, toHex, zeroAddress, type Address, type Hex } from "viem";
+import { createPublicClient, decodeEventLog, encodeFunctionData, http, isAddressEqual, padHex, parseAbi, toEventSelector, toHex, zeroAddress, type Address, type Hex } from "viem";
 import { keyAbi, keyRegistry, noticeAbi, payAbi } from "../../../shared/abi";
 import { nativeAddress, readTarget } from "../../../shared/addresses";
 import { onchainMessage, simulateAction } from "../../../shared/contractActions";
@@ -16,6 +16,17 @@ function configured(input?: string) {
 
 export const board = configured(import.meta.env.VITE_MOVENOTICE_ADDRESS);
 export const guard = configured(import.meta.env.VITE_GUARDEDPAY_ADDRESS);
+
+const guardNoticeAbi = parseAbi(["function notice() view returns (address)"]);
+
+export async function verifyGuardedPayConfig(boardAddress: Address, guardAddress: Address) {
+  try {
+    const notice = await client.readContract({ address: guardAddress, abi: guardNoticeAbi, functionName: "notice" });
+    return isAddressEqual(notice, boardAddress);
+  } catch {
+    return false;
+  }
+}
 
 export async function keyStatus(account: Address) {
   const [registered, algorithm, key, proven] = await client.readContract({

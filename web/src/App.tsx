@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { nativeAddress } from "../../shared/addresses";
 import { TESTNET_ID } from "../../shared/messages";
-import { board, guard, keyStatus, windowStatus } from "./lib/chain";
+import { board, guard, keyStatus, verifyGuardedPayConfig, windowStatus } from "./lib/chain";
 import { useWallet, type Wallet } from "./lib/wallet";
 import { Lookup } from "./screens/Lookup";
 import { MyMove, PostMove } from "./screens/Actions";
@@ -49,9 +49,17 @@ function Identity({ wallet }: { wallet: Wallet }) {
 export default function App() {
   const [page, setPage] = useState<Page>(currentPage);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [configMatches, setConfigMatches] = useState<boolean>();
   const { choices, wallet, connect, error, busy, disconnect } = useWallet();
   const selected = pages[page];
   const missing = !board || !guard;
+
+  useEffect(() => {
+    if (!board || !guard) return;
+    let active = true;
+    void verifyGuardedPayConfig(board, guard).then((matches) => { if (active) setConfigMatches(matches); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     function syncPage() { if (window.location.hash !== "#content") setPage(currentPage()); }
@@ -116,7 +124,8 @@ export default function App() {
         {page === "lookup" && <Lookup contract={board} />}
         {page === "post" && <PostMove key={wallet?.account} contract={board} wallet={wallet} />}
         {page === "mine" && <MyMove key={wallet?.account} contract={board} wallet={wallet} />}
-        {page === "send" && <SendScreen key={wallet?.account} board={board} guard={guard} wallet={wallet} />}
+        {page === "send" && <SendScreen key={wallet && `${wallet.chainId}:${wallet.account}`}
+          board={board} guard={guard} wallet={wallet} configMatches={configMatches} />}
         {page === "help" && <HowItWorks />}
         {page === "lookup" && <div className="status-guide" aria-label="Move status meanings">
           <article><span className="guide-mark none" aria-hidden="true"></span><h3>No notice</h3><p>No move is recorded for the account.</p></article>

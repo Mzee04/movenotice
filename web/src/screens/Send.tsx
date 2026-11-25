@@ -1,36 +1,40 @@
-import { useState, type FormEvent } from "react";
-import { type Address, type Hex } from "viem";
+import { useRef, useState, type FormEvent } from "react";
+import { type Address } from "viem";
 import { movedRecipient } from "../../../shared/errors";
 import { readAmount, readPaymentRecipient } from "../../../shared/payment";
-import { checkPayment, client, describeError, simulatePayment, type PaymentCheck } from "../lib/chain";
+import { checkPayment, describeError, simulatePayment, type PaymentCheck } from "../lib/chain";
+import { repeatsPayment, usePendingPayments } from "../lib/pendingPayments";
 import { sendWithWallet, type Wallet } from "../lib/wallet";
 import { CopyCommand, Feedback, Section, StatusPill, TxLink, remaining, useChainClock, utc } from "../ui";
 
 type Checked = { recipient: Address; amount: string; value: bigint; result: PaymentCheck };
 
-export function SendScreen({ board, guard, wallet }: { board?: Address; guard?: Address; wallet?: Wallet }) {
+export function SendScreen({ board, guard, wallet, configMatches }: {
+  board?: Address; guard?: Address; wallet?: Wallet; configMatches?: boolean;
+}) {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [checked, setChecked] = useState<Checked>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [simulation, setSimulation] = useState("");
-  const [hash, setHash] = useState<Hex>();
-  const configured = !!board && !!guard;
+  const sending = useRef(false);
+  const { pending, settled, storageError, reconcile, record } = usePendingPayments(wallet?.account);
+  const configured = !!board && !!guard && configMatches === true;
   const now = useChainClock(checked?.result.timestamp);
   const result = checked?.result;
   const expiredPending = result?.status === 1 && result.effectiveAt <= now;
-  const allowed = !!checked && result?.ok && !expiredPending && !hash;
+  const allowed = configured && !!checked && result?.ok && !expiredPending;
+  const blocked = storageError || (!!checked && repeatsPayment(pending, checked.recipient, checked.value));
 
   function reset() {
     setChecked(undefined);
     setSimulation("");
     setError("");
-    setHash(undefined);
   }
 
   async function check(input: string) {
-    if (!board || !guard) return;
+    if (!configured || !board || !guard) return;
     reset();
     setBusy(true);
     try {
@@ -56,7 +60,8 @@ export function SendScreen({ board, guard, wallet }: { board?: Address; guard?: 
   }
 
   async function send() {
-    if (!board || !guard || !wallet?.sending || !checked || !allowed) return;
+    if (!board || !guard || !wallet?.sending || !checked || !allowed || sending.current) return;
+    sending.current = true;
     setBusy(true);
     setError("");
     setSimulation("");
@@ -65,12 +70,10 @@ export function SendScreen({ board, guard, wallet }: { board?: Address; guard?: 
       setChecked({ ...checked, result: fresh });
       if (!fresh.ok) return;
       const data = await simulatePayment(guard, checked.recipient, checked.value, wallet.account);
-      const tx = await sendWithWallet(wallet, guard, data, checked.value);
-      setHash(tx);
-      setSimulation("Submitted. Waiting for confirmation…");
-      const receipt = await client.waitForTransactionReceipt({ hash: tx, timeout: 60_000 });
-      if (receipt.status !== "success") throw new Error("Payment reverted on chain. Check the recipient again.");
-      setSimulation("Payment confirmed on QoreChain Testnet.");
+      const previous = await reconcile();
+      if (!previous || repeatsPayment(previous, checked.recipient, checked.value)) return;
+      const hash = await sendWithWallet(wallet, guard, data, checked.value);
+      record(hash, checked.recipient, checked.value);
     } catch (issue) {
       setSimulation("");
       const moved = movedRecipient(issue);
@@ -80,7 +83,10 @@ export function SendScreen({ board, guard, wallet }: { board?: Address; guard?: 
       } else {
         setError(describeError(issue, "Could not send. Check the EVM window, balance and wallet network."));
       }
-    } finally { setBusy(false); }
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -89,6 +95,10 @@ export function SendScreen({ board, guard, wallet }: { board?: Address; guard?: 
   }
 
   return <Section title="Guarded send" description="Check a recipient against MoveNotice before sending test QOR.">
+    {board && guard && configMatches === undefined && <p role="status">Checking GuardedPay configuration…</p>}
+    {configMatches === false && <Feedback tone="danger">
+      Guarded send configuration mismatch. Could not verify that GuardedPay uses the configured MoveNotice address.
+    </Feedback>}
     <form onSubmit={onSubmit}>
       <div className="form-grid">
         <label className="field">Recipient address
@@ -121,9 +131,15 @@ export function SendScreen({ board, guard, wallet }: { board?: Address; guard?: 
     </div>}
     {error && <Feedback tone="danger">{error}</Feedback>}
     {simulation && <Feedback tone="good">{simulation}</Feedback>}
-    {hash && <p><TxLink hash={hash} /></p>}
+    {pending.map(({ hash }) => <Feedback key={hash} tone="warning">
+      Previous payment still pending: <TxLink hash={hash}><code>{hash}</code></TxLink>
+    </Feedback>)}
+    {storageError && <Feedback tone="danger">Pending payment history could not be saved or read. Restore browser storage to send again.</Feedback>}
+    {settled && <Feedback tone={settled.status === "success" ? "good" : "danger"}>
+      {settled.status === "success" ? "Payment confirmed on QoreChain Testnet." : "Payment reverted on chain."} <TxLink hash={settled.hash} />
+    </Feedback>}
     {allowed && checked && (wallet?.sending && !error
-      ? <button type="button" className="button primary" disabled={busy} onClick={() => void send()}>Send with wallet</button>
-      : <CopyCommand command={`pnpm notice pay ${checked.recipient} ${checked.amount}`} />)}
+      ? <button type="button" className="button primary" disabled={busy || blocked} onClick={() => void send()}>Send with wallet</button>
+      : !blocked && <CopyCommand command={`pnpm notice pay ${checked.recipient} ${checked.amount}`} />)}
   </Section>;
 }

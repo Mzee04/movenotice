@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { encodeAbiParameters, padHex, toEventSelector, zeroAddress, type Address, type Hex } from "viem";
 import { nativeAddress, readAddress, readTarget } from "../../shared/addresses";
 import golden from "../../shared/golden.json";
+import { QORE_EXPLORER } from "../../shared/messages";
+import App from "./App";
 import { buildMessage, readSignedNotice, type Action } from "./lib/messages";
 import { recentEvents } from "./lib/chain";
 import { canSend, type Choice, type Wallet } from "./lib/wallet";
@@ -17,11 +19,21 @@ const rpc = vi.hoisted(() => ({
   request: vi.fn(),
   getBlock: vi.fn(),
   getBlockNumber: vi.fn(),
+  getTransactionReceipt: vi.fn(),
 }));
 
 vi.mock("viem", async (importOriginal) => {
   const actual = await importOriginal<typeof import("viem")>();
   return { ...actual, createPublicClient: () => rpc };
+});
+
+vi.mock("./lib/chain", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./lib/chain")>();
+  return {
+    ...actual,
+    board: "0x3333333333333333333333333333333333333333",
+    guard: "0x4444444444444444444444444444444444444444",
+  };
 });
 
 const account = golden.account as Address;
@@ -44,6 +56,8 @@ const readOnly: Wallet = { choice, account, chainId: 9800, sending: false };
 
 beforeEach(() => {
   vi.resetAllMocks();
+  window.localStorage.clear();
+  window.history.replaceState(null, "", "/");
   vi.stubEnv("VITE_DEPLOYMENT_BLOCK", undefined);
   vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Unexpected network request in an offline test"); }));
   rpc.getBlock.mockResolvedValue({ number: 10n, timestamp: now });
@@ -199,15 +213,36 @@ describe("Notice lookup and countdown", () => {
 });
 
 describe("Guarded send", () => {
-  function check(result: readonly [boolean, Address, number], wallet?: Wallet) {
+  const sendingWallet: Wallet = { ...readOnly, sending: true };
+  const hash = ("0x" + "ab".repeat(32)) as Hex;
+  const storageKey = `movenotice:pending-payments:${sendingWallet.chainId}:${account.toLowerCase()}`;
+
+  function setPaymentResponse(result: readonly [boolean, Address, number]) {
     rpc.readContract.mockImplementation(async ({ functionName, args }) => {
       if (functionName === "check") return args[0] === to ? [true, zeroAddress, 0] : result;
       if (functionName === "resolve") return [result[1], result[2], now + 600n];
     });
-    render(<SendScreen board={contract} guard={guard} wallet={wallet} />);
-    fireEvent.change(screen.getByLabelText("Recipient address"), { target: { value: account } });
-    fireEvent.change(screen.getByLabelText("Amount (QOR)"), { target: { value: "0.01" } });
+  }
+
+  function checkRecipient(recipient: string = account, amount = "0.01") {
+    fireEvent.change(screen.getByLabelText("Recipient address"), { target: { value: recipient } });
+    fireEvent.change(screen.getByLabelText("Amount (QOR)"), { target: { value: amount } });
     fireEvent.click(screen.getByRole("button", { name: "Check recipient" }));
+  }
+
+  function check(result: readonly [boolean, Address, number], wallet?: Wallet) {
+    setPaymentResponse(result);
+    const view = render(<SendScreen board={contract} guard={guard} wallet={wallet} configMatches />);
+    checkRecipient();
+    return view;
+  }
+
+  function sendButton() {
+    return screen.getByRole<HTMLButtonElement>("button", { name: "Send with wallet" });
+  }
+
+  function storePendingPayment() {
+    window.localStorage.setItem(storageKey, JSON.stringify([{ hash, recipient: account, value: "10000000000000000" }]));
   }
 
   it("refuses a final move and rechecks the suggested recipient on selection", async () => {
@@ -248,6 +283,127 @@ describe("Guarded send", () => {
     expect(await screen.findByText(/No move notice found/)).toBeTruthy();
     expect(await screen.findByText("Payment simulation passed.")).toBeTruthy();
     expect((screen.getByRole("button", { name: "Send with wallet" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("keeps a pending hash visible after checking a different recipient and reopening the screen", async () => {
+    rpc.getTransactionReceipt.mockRejectedValue(new Error("Receipt unavailable"));
+    provider.request.mockImplementation(async ({ method }) => {
+      if (method === "eth_accounts") return [account];
+      if (method === "eth_chainId") return "0x2648";
+      if (method === "eth_sendTransaction") return hash;
+      throw new Error("Unexpected wallet request");
+    });
+    const first = check([true, zeroAddress, 0], sendingWallet);
+    await screen.findByText("Payment simulation passed.");
+    fireEvent.click(sendButton());
+
+    expect((await screen.findByRole("link", { name: hash })).getAttribute("href")).toBe(`${QORE_EXPLORER}/tx/${hash}`);
+    expect(JSON.parse(window.localStorage.getItem(storageKey)!)).toEqual([
+      { hash, recipient: account, value: "10000000000000000" },
+    ]);
+    expect(rpc.getTransactionReceipt).toHaveBeenCalledWith({ hash });
+
+    checkRecipient(to);
+    await screen.findByText("Payment simulation passed.");
+    expect(sendButton().disabled).toBe(false);
+    expect(screen.getByText(/Previous payment still pending/)).toBeTruthy();
+
+    first.unmount();
+    rpc.getTransactionReceipt.mockClear();
+    render(<SendScreen board={contract} guard={guard} configMatches />);
+    expect(await screen.findByRole("link", { name: hash })).toBeTruthy();
+    expect(rpc.getTransactionReceipt).toHaveBeenCalledWith({ hash });
+  });
+
+  it("blocks the same address and amount after reload while the receipt is unknown", async () => {
+    storePendingPayment();
+    rpc.getTransactionReceipt.mockRejectedValue(new Error("RPC unavailable"));
+    setPaymentResponse([true, zeroAddress, 0]);
+    render(<SendScreen board={contract} guard={guard} wallet={sendingWallet} configMatches />);
+
+    checkRecipient(nativeAddress(account), "0.010");
+    await screen.findByText("Payment simulation passed.");
+    expect(sendButton().disabled).toBe(true);
+    fireEvent.click(sendButton());
+    expect(provider.request).not.toHaveBeenCalled();
+    expect(screen.getByText(/Previous payment still pending/)).toBeTruthy();
+  });
+
+  it("uses the selected sender’s Testnet history when a wallet is connected", async () => {
+    storePendingPayment();
+    const otherChainKey = `movenotice:pending-payments:1:${to.toLowerCase()}`;
+    window.localStorage.setItem(otherChainKey, window.localStorage.getItem(storageKey)!);
+    check([true, zeroAddress, 0], { ...sendingWallet, account: to });
+
+    await screen.findByText("Payment simulation passed.");
+    expect(screen.queryByText(/Previous payment still pending/)).toBeNull();
+    expect(sendButton().disabled).toBe(false);
+    expect(rpc.getTransactionReceipt).not.toHaveBeenCalled();
+  });
+
+  it("checks storage again before asking the wallet to pay", async () => {
+    rpc.getTransactionReceipt.mockRejectedValue(new Error("Receipt unavailable"));
+    check([true, zeroAddress, 0], sendingWallet);
+    await screen.findByText("Payment simulation passed.");
+    storePendingPayment();
+
+    fireEvent.click(sendButton());
+
+    expect(await screen.findByText(/Previous payment still pending/)).toBeTruthy();
+    expect(sendButton().disabled).toBe(true);
+    expect(rpc.getTransactionReceipt).toHaveBeenCalledWith({ hash });
+    expect(provider.request).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["success", "Payment confirmed on QoreChain Testnet."],
+    ["reverted", "Payment reverted on chain."],
+  ])("clears a pending payment when the RPC returns a %s receipt", async (status, message) => {
+    storePendingPayment();
+    rpc.getTransactionReceipt.mockResolvedValue({ status });
+    check([true, zeroAddress, 0], sendingWallet);
+
+    expect(await screen.findByText(message)).toBeTruthy();
+    await screen.findByText("Payment simulation passed.");
+    expect(screen.queryByText(/Previous payment still pending/)).toBeNull();
+    expect(window.localStorage.getItem(storageKey)).toBeNull();
+    expect(sendButton().disabled).toBe(false);
+  });
+
+  it.each(["a different MoveNotice address", "an RPC error"])("disables Guarded send when startup gets %s", async (outcome) => {
+    rpc.readContract.mockImplementation(async ({ functionName }) => {
+      if (functionName !== "notice") throw new Error("Unexpected contract read");
+      if (outcome === "an RPC error") throw new Error("RPC unavailable");
+      return to;
+    });
+
+    render(<App />);
+    await screen.findByRole("heading", { name: "Check before you send" });
+    expect(rpc.readContract).toHaveBeenCalledWith(expect.objectContaining({ address: guard, functionName: "notice" }));
+
+    act(() => {
+      window.history.replaceState(null, "", "#send");
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Guarded send configuration mismatch.");
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "Recipient address" }).disabled).toBe(true);
+    const checkButton = screen.getByRole<HTMLButtonElement>("button", { name: "Check recipient" });
+    expect(checkButton.disabled).toBe(true);
+    fireEvent.click(checkButton);
+    expect(rpc.readContract).toHaveBeenCalledTimes(1);
+    expect(rpc.simulateContract).not.toHaveBeenCalled();
+    expect(provider.request).not.toHaveBeenCalled();
+  });
+
+  it("enables Guarded send after verifying the matching MoveNotice address", async () => {
+    rpc.readContract.mockResolvedValue(contract);
+    window.history.replaceState(null, "", "#send");
+    render(<App />);
+
+    expect(screen.getByRole("status").textContent).toBe("Checking GuardedPay configuration…");
+    await waitFor(() => expect(screen.getByRole<HTMLButtonElement>("button", { name: "Check recipient" }).disabled).toBe(false));
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });
 

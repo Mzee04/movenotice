@@ -9,11 +9,11 @@ The full test suite and production build passed on **25 November 2026 (UTC)** wi
 | Foundry · MoveNotice | 33 | 0 | 0 |
 | Foundry · GuardedPay | 8 | 0 | 0 |
 | Vitest · CLI | 24 | 0 | 0 |
-| Vitest · web | 26 | 0 | 0 |
+| Vitest · web | 35 | 0 | 0 |
 
-Foundry ran 256 inputs for `testFuzz_postWarpResolve`. Vitest ran 50 tests across five files, for 91 passing tests overall. The suites include the fixed Solidity and TypeScript message vectors, real ML-DSA-87 signing and rejection of a modified signature, and mocked web RPC calls. The tests use synthetic keys only. The new tests cover account-index parsing, redacted chain diagnostics, the 24-hour expiry cap, lookup warnings and paging, late cancellation, payment recipient validation, duplicate finalization, finalization after cancellation, and GuardedPay recipient callbacks.
+Foundry ran 256 inputs for `testFuzz_postWarpResolve`. Vitest ran 59 tests across five files, for 100 passing tests overall. The suites include the fixed Solidity and TypeScript message vectors, real ML-DSA-87 signing and rejection of a modified signature, and mocked web RPC calls. The tests use synthetic keys only. The latest web tests cover pending payment hashes across recipient checks and reloads, sender and chain scoping, blocking repeats until a receipt arrives, and disabling Guarded send when startup cannot verify the configured MoveNotice address.
 
-`pnpm build` passed. It checked the existing Foundry artifacts, type-checked the CLI, shared code and web app, and built the Vite production bundle. Both audit drafts compiled separately with Solidity 0.8.28 during the initial verification. The production bundle rendered its setup state and navigated to **How it works** in a local jsdom smoke check. `pnpm notice help` also ran with network access denied.
+`pnpm build` passed. It checked the existing Foundry artifacts, type-checked the CLI, shared code and web app, and built the Vite production bundle. Both audit drafts compiled separately with Solidity 0.8.28 during the initial verification. In an earlier run, the production bundle rendered its setup state and navigated to **How it works** in a local jsdom smoke check. `pnpm notice help` also ran with network access denied.
 
 ## Coverage
 
@@ -38,7 +38,7 @@ The deploy script was compiled and left unexecuted. Its coverage row is zero. Th
 | Vitest | 3.2.7 |
 | Vite | 6.4.6 |
 
-Forge lint emitted advisories on intentional recipient forwarding, timestamp comparisons, bounded timestamp casts and unused tuple fields. Vite reported an upstream `@scure/base` annotation warning and a main chunk above 500 kB. The main JavaScript chunk is 684.51 kB gzip.
+Forge lint emitted advisories on intentional recipient forwarding, timestamp comparisons, bounded timestamp casts and unused tuple fields. Vite reported an upstream `@scure/base` annotation warning and a main chunk above 500 kB. The main JavaScript chunk is 685.56 kB gzip.
 
 ## Integration differences
 

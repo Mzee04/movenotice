@@ -79,7 +79,7 @@ Open the local address printed by Vite. Without deployed addresses the app shows
 
 ## Verification
 
-The full suite passed **91 tests** on 25 November 2026 (UTC). Foundry passed 41 tests, and Vitest passed 24 CLI tests and 26 web tests. `pnpm build` succeeded. [Test results](TEST_RESULTS.md)
+The full suite passed **100 tests** on 25 November 2026 (UTC). Foundry passed 41 tests, and Vitest passed 24 CLI tests and 35 web tests. `pnpm build` succeeded. [Test results](TEST_RESULTS.md)
 
 ## Deploy to Testnet
 
