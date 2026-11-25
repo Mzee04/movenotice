@@ -38,6 +38,9 @@ The local review entries document hardening before the QCAI run. Record each Sta
 2. Save dated reports with the final source revision. Record remaining findings and their disposition. Re-run local tests and rebuild after fixes. Redeploy and update the demo evidence if an audited source change affects the deployed bytecode.
 3. Link both stages from the fest submission or from this file in the public repository.
 
-Stage 2 date, settings and report links **pending**.
+The final contracts were audited with **Ethereum (EVM/Solidity)**. Both reports scored **85/100**, rated risk **MEDIUM**, and listed **four findings**. Quantum readiness was unscored for this setting.
+
+- The **24 Nov 2026** MoveNotice report repeats relayer access, checked timestamp arithmetic, front-running and traversal bounds. [Stage 2 MoveNotice PDF](stage2_MoveNotice.pdf)
+- The **25 Nov 2026** GuardedPay report repeats relayer access, checked delay arithmetic and front-running, and notes ERC compliance indicators. The table above records each disposition. [Stage 2 GuardedPay PDF](stage2_GuardedPay.pdf)
 
 The EVM precompiles supply the ML-DSA-87 verification and registry read. The dashboard can show the Solidity quantum readiness score as unscored. Use the [README threat model](../README.md#post-quantum-protection) and tests to explain how the application uses both precompiles. [Workshop audit example](https://github.com/qorechain/build-before-qday/tree/main/workshop-2/01-qday-vault/audit)

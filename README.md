@@ -1,8 +1,6 @@
 # MoveNotice
 
-MoveNotice is a public notice board for signed, time-locked wallet moves on QoreChain Testnet.
-
-A message that says “we changed wallets, please pay this new address” is easy to fake. A genuine move creates another problem when people keep paying the old address. MoveNotice gives wallets, agents and people a first check they can make before sending.
+MoveNotice gives wallets a public, delay-locked record that says “this account is moving to B.” The account owner signs the notice with ML-DSA-87 and can cancel it with another signed action before the delay ends. Once the move is final, GuardedPay refuses payments to the old address and returns B so the sender can verify it before paying.
 
 ![MoveNotice cover with three steps, post, delay and final](docs/cover.png)
 
@@ -51,13 +49,12 @@ Concatenate the following bytes with Solidity `abi.encodePacked`. Tags are liter
 
 The only supported network is **QoreChain Testnet**, Cosmos `qorechain-diana`, EVM `9800` (`0x2648`). Switch the explorer to Testnet when following transaction links. [Network details](https://docs.qorechain.io/appendix/networks/) · [Explorer](https://explore.qore.network)
 
-| Entry | EVM address | QoreChain address |
+| Contract | EVM address | Deployment |
 |---|---|---|
-| MoveNotice | TBD after deployment | TBD after deployment (qor1…) |
-| GuardedPay | TBD after deployment | TBD after deployment (qor1…) |
-| Demo deployer | TBD after deployment | TBD after deployment (qor1…) |
+| MoveNotice | `0x4275d4514c3b268A985975a97A9855556A8f90D8` | [Testnet receipt](https://explore.qore.network/tx/0x3f5779f7bd98813bf738b7e118481030c980cf6ae24520d9fd6991d03bf43372) |
+| GuardedPay | `0x78e20EC4A434C2a306928885c9a4f20f99C28f49` | [Testnet receipt](https://explore.qore.network/tx/0xce6d2e6482abb6dc9f8c36f20bd7645087dc2595ff338dfadb3097aaf8f5e4dc) |
 
-The deploy command saves confirmed public addresses, deployment block and transaction hashes to `deployments/testnet.json`. The `pnpm notice resolve <address>` command shows the EVM and `qor1…` encodings of the same 20 bytes. `pnpm notice status` shows both encodings for the configured account.
+The [deployment manifest](deployments/testnet.json) records the public addresses, deployment block and transaction hashes. The `pnpm notice resolve <address>` command shows the EVM and `qor1…` encodings of the same 20 bytes. `pnpm notice status` shows both encodings for the configured account.
 
 - `MovePosted(account, to, nonce, postedAt, effectiveAt, relayer)`
 - `MoveCancelled(account, to, nonce, relayer)`
@@ -79,6 +76,10 @@ pnpm dev
 ```
 
 Open the local address printed by Vite. Without deployed addresses the app shows its setup state. The tests and build run offline after installation. The browser sends read requests to the public testnet EVM RPC when configured. For the REST window status in production, set `VITE_QORE_REST_URL` to a CORS-enabled testnet REST origin or proxy the `/lcd-testnet` path to `https://api-testnet.qore.host`, stripping the path prefix. Vite dev and preview include that proxy.
+
+## Verification
+
+The full suite passed **91 tests** on 25 November 2026 (UTC). Foundry passed 41 tests, and Vitest passed 24 CLI tests and 26 web tests. `pnpm build` succeeded. [Test results](TEST_RESULTS.md)
 
 ## Deploy to Testnet
 
@@ -113,11 +114,33 @@ The CLI writes only public action data into `notices/`. Anyone can relay a signe
 - QoreX currently supplies an address for reads. The local CLI handles ML-DSA-87 signing and holds the key outside the browser. [QoreX integrations](https://docs.qorechain.io/developer-tools/qorex-integrations/)
 - The MoveNotice precompiles are active only on QoreChain Testnet. They are inactive on mainnet today. [QoreChain precompiles](https://docs.qorechain.io/developer-guide/evm-precompiles/)
 - The ten-minute demo delay makes the flow watchable. Allow 48–72 hours for actual operations so more watchers have time to respond. One ML-DSA-87 signature adds about 4.6 KB of calldata. Verification alone costs about 90–95k gas, based on a contract call measured on QoreChain Testnet on 22 November 2026.
-- The current evidence is local automated testing. A human security audit and the two QCAI runs are pending.
+- The project has two stages of QCAI reports, local automated tests and a testnet rehearsal. A separate human security audit is pending.
+
+## Audit
+
+Both QCAI stages used **Ethereum (EVM/Solidity)**. The two Stage 2 reports each scored **85/100**, rated risk **MEDIUM**, and listed four findings.
+
+| Report | Score | Risk | Findings |
+|---|---:|---|---:|
+| [Stage 1 · MoveNotice draft](audit/stage1_MoveNotice_v0_draft.pdf) | 85/100 | MEDIUM | 4 |
+| [Stage 1 · GuardedPay draft](audit/stage1_GuardedPay_v0_draft.pdf) | 85/100 | MEDIUM | 5 |
+| [Stage 2 · MoveNotice final](audit/stage2_MoveNotice.pdf) | 85/100 | MEDIUM | 4 |
+| [Stage 2 · GuardedPay final](audit/stage2_GuardedPay.pdf) | 85/100 | MEDIUM | 4 |
+
+| Finding | Project response |
+|---|---|
+| Relayer access | Permissionless relay is by design. A post or cancellation requires the account’s ML-DSA-87 signature over the action, chain ID, contract address, nonce and expiry. |
+| Timestamp overflow | The delay is bounded to 30 days. Solidity 0.8 checked addition reverts if the calculation overflows. |
+| Front-running and nonce handling | A competing relay can only submit the same signed move. A successful submission advances the account nonce and invalidates replays. |
+| Traversal bounds | `resolveFinal` caps traversal at eight hops and stops before revisiting an address. |
+| ERC compliance indicators | GuardedPay forwards native QOR. ERC token standards are outside its interface. |
+| Finalization race | Finalization consumes the pending record atomically, and a fresh resolution runs before each nested payment. Regression tests cover duplicate finalization, cancelled notices and recipient callbacks. |
+
+The [audit worksheet](audit/README.md) maps findings to regression tests. The QCAI results are a first check.
 
 ## Fest and credits
 
-Solo entry in the **Post-Quantum dApp** category for Build Before Q-Day. Submissions close **2 December 2026 at 23:59 UTC**. The [demo plan](DEMO.md), [AI usage](AI_USAGE.md), [test results](TEST_RESULTS.md) and [audit workflow](audit/README.md) are in this repository. [Fest rules](https://build.qorechain.io/rules) · [Track conditions](https://build.qorechain.io/prizes)
+Solo entry in the **Post-Quantum dApp** category for Build Before Q-Day. Submissions close **2 December 2026 at 23:59 UTC**. The [short demo script](DEMO_SHORT.md), [demo runbook](DEMO.md), [AI usage](AI_USAGE.md), [test results](TEST_RESULTS.md) and [audit workflow](audit/README.md) are in this repository. [Fest rules](https://build.qorechain.io/rules) · [Track conditions](https://build.qorechain.io/prizes)
 
 - Scaffolding used the official `create-qorechain-dapp@0.14.0` **foundry** and **viem-wagmi** templates. Precompile mocking, raw action signing and native window handling follow the Apache-2.0 QDayVault workshop patterns. [QoreChain docs](https://docs.qorechain.io/) · [QDayVault workshop](https://github.com/qorechain/build-before-qday/tree/main/workshop-2/01-qday-vault)
 - `@qorechain/sdk` supplies account, key, notice signing and native transaction helpers. `@qorechain/evm` supplies the testnet definition and window reads. `@qorechain/pqc` supplies real ML-DSA-87 in the test suite. wagmi and RainbowKit came with the viem-wagmi template. The final app uses only the EIP-1193 discovery helper from `@qorechain/qorex-rainbowkit` for QoreX. [QoreChain developer packages](https://docs.qorechain.io/developer-tools/qorex-integrations/)

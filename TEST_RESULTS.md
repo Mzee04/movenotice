@@ -1,23 +1,23 @@
 # MoveNotice test results
 
-Final verification completed on **22 November 2026 at 08:27 UTC**. The standalone Foundry suite, full test suite, build, coverage and production startup smoke check ran under an OS profile that denied network access. Dependencies were installed before these checks.
+The full test suite and production build passed on **25 November 2026 (UTC)** with network access denied. The results below are from that run. Earlier local verification also covered Foundry coverage and a production startup smoke check.
 
 ## Results
 
 | Check | Passed | Failed | Skipped |
 |---|---:|---:|---:|
-| Foundry · MoveNotice | 31 | 0 | 0 |
-| Foundry · GuardedPay | 7 | 0 | 0 |
+| Foundry · MoveNotice | 33 | 0 | 0 |
+| Foundry · GuardedPay | 8 | 0 | 0 |
 | Vitest · CLI | 24 | 0 | 0 |
 | Vitest · web | 26 | 0 | 0 |
 
-Foundry ran 256 inputs for `testFuzz_postWarpResolve`. Vitest ran 50 tests across five files. The suites include the fixed Solidity and TypeScript message vectors, real ML-DSA-87 signing and rejection of a modified signature, and mocked web RPC calls. The tests use synthetic keys only. The new tests cover account-index parsing, redacted chain diagnostics, the 24-hour expiry cap, lookup warnings and paging, late cancellation, and payment recipient validation.
+Foundry ran 256 inputs for `testFuzz_postWarpResolve`. Vitest ran 50 tests across five files, for 91 passing tests overall. The suites include the fixed Solidity and TypeScript message vectors, real ML-DSA-87 signing and rejection of a modified signature, and mocked web RPC calls. The tests use synthetic keys only. The new tests cover account-index parsing, redacted chain diagnostics, the 24-hour expiry cap, lookup warnings and paging, late cancellation, payment recipient validation, duplicate finalization, finalization after cancellation, and GuardedPay recipient callbacks.
 
 `pnpm build` passed. It checked the existing Foundry artifacts, type-checked the CLI, shared code and web app, and built the Vite production bundle. Both audit drafts compiled separately with Solidity 0.8.28 during the initial verification. The production bundle rendered its setup state and navigated to **How it works** in a local jsdom smoke check. `pnpm notice help` also ran with network access denied.
 
 ## Coverage
 
-`pnpm coverage:forge` completed using standard Foundry instrumentation.
+The earlier 22 November 2026 coverage run used standard Foundry instrumentation. These are the baseline figures from that run.
 
 | Scope | Lines | Statements | Branches | Functions |
 |---|---:|---:|---:|---:|
@@ -25,7 +25,7 @@ Foundry ran 256 inputs for `testFuzz_postWarpResolve`. Vitest ran 50 tests acros
 | GuardedPay | 100% (12/12) | 100% (14/14) | 100% (3/3) | 100% (3/3) |
 | Foundry total, including script and test helpers | 87.76% (129/147) | 86.67% (156/180) | 92.86% (26/28) | 93.33% (28/30) |
 
-The deploy script was compiled and left unexecuted. Its coverage row is zero. The local protocol tests use precompile stand-ins. Live wallet and chain writes along with both QCAI runs remain part of the builder’s testnet work.
+The deploy script was compiled and left unexecuted. Its coverage row is zero. The local protocol tests use precompile stand-ins. The testnet deployment and both QCAI stages are documented in the [repository README](README.md#audit).
 
 ## Tool versions and build notes
 
@@ -38,7 +38,7 @@ The deploy script was compiled and left unexecuted. Its coverage row is zero. Th
 | Vitest | 3.2.7 |
 | Vite | 6.4.6 |
 
-Forge lint emitted advisories on intentional recipient forwarding, timestamp comparisons, bounded timestamp casts and unused tuple fields. Vite reported an upstream `@scure/base` annotation warning and a main chunk above 500 kB. The main JavaScript chunk is 684.40 kB gzip.
+Forge lint emitted advisories on intentional recipient forwarding, timestamp comparisons, bounded timestamp casts and unused tuple fields. Vite reported an upstream `@scure/base` annotation warning and a main chunk above 500 kB. The main JavaScript chunk is 684.51 kB gzip.
 
 ## Integration differences
 

@@ -1,0 +1,617 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 7038
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F1 22 Tf
+25.2999999999999972 TL
+0.063 0.725 0.506 rg
+39.6850393700787407 785.1970866141732586 Td
+(QoreChain AI) Tj
+ET
+BT
+/F1 16 Tf
+18.3999999999999986 TL
+0.157 g
+39.6850393700787407 756.8506299212598378 Td
+(Security Audit Report) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.392 g
+39.6850393700787407 728.5041732283464171 Td
+(Generated: 11/24/2026, 9:00:52 PM) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.392 g
+39.6850393700787407 714.3309448818897636 Td
+(Contract Name: MoveNotice) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.392 g
+39.6850393700787407 700.15771653543311 Td
+(Blockchain: ethereum) Tj
+ET
+0.78 G
+39.6850393700787407 685.9844881889763428 m
+555.5905511811024553 685.9844881889763428 l
+S
+BT
+/F1 12 Tf
+13.7999999999999989 TL
+0. g
+39.6850393700787407 657.6380314960629221 Td
+(Audit Overview) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+39.6850393700787407 629.291574803149615 Td
+(Overall Security Score: 85/100) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+39.6850393700787407 615.1183464566928478 Td
+(Risk Level: MEDIUM) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+39.6850393700787407 600.9451181102361943 Td
+(Quantum Readiness: not scored for this setting) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+39.6850393700787407 586.7718897637794271 Td
+(Total Vulnerabilities: 4) Tj
+ET
+BT
+/F1 12 Tf
+13.7999999999999989 TL
+0. g
+39.6850393700787407 544.2522047244094665 Td
+(Executive Summary) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.235 g
+39.6850393700787407 515.9057480314959321 Td
+(The MoveNotice contract implements a time-locked account migration system using post-quantum cryptography. It) Tj
+T* (includes mechanisms for posting and cancelling moves, with signature verification via a precompile interface. The) Tj
+T* (contract has several medium-severity issues related to access control, potential integer overflows, and front-running) Tj
+T* (vulnerabilities. There are also some low-severity concerns regarding gas optimization and loop safety.) Tj
+ET
+0.78 G
+0.5670000000000001 w
+0.78 G
+0.5670000000000001 w
+0.06 0.73 0.51 rg
+0.78 G
+0. w
+0.06 0.73 0.51 rg
+40. 430.8663779527558404 108.2656582212706411 -21.4999999999999964 re
+f
+BT
+/F2 10 Tf
+11.5 TL
+1. g
+45. 417.3663779527558972 Td
+(Vulnerability) Tj
+ET
+0.06 0.73 0.51 rg
+0.78 G
+0. w
+0.06 0.73 0.51 rg
+148.2656582212706269 430.8663779527558404 48.6000000000000014 -21.4999999999999964 re
+f
+BT
+/F2 10 Tf
+11.5 TL
+1. g
+153.2656582212706269 417.3663779527558972 Td
+(Severity) Tj
+ET
+0.06 0.73 0.51 rg
+0.78 G
+0. w
+0.06 0.73 0.51 rg
+196.8656582212706496 430.8663779527558404 88.5700000000000074 -21.4999999999999964 re
+f
+BT
+/F2 10 Tf
+11.5 TL
+1. g
+201.8656582212706496 417.3663779527558972 Td
+(Location) Tj
+ET
+0.06 0.73 0.51 rg
+0.78 G
+0. w
+0.06 0.73 0.51 rg
+285.4356582212706712 430.8663779527558404 269.8443417786651253 -21.4999999999999964 re
+f
+BT
+/F2 10 Tf
+11.5 TL
+1. g
+290.4356582212706712 417.3663779527558972 Td
+(Recommendation) Tj
+ET
+0.78 G
+0.5670000000000001 w
+0.96 g
+0.78 G
+0. w
+0.96 g
+40. 409.3663779527558404 108.2656582212706411 -41.0499999999999972 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+45. 396.71637795275592 Td
+(Missing Access Control) Tj
+T* (on Critical Functions) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+148.2656582212706269 409.3663779527558404 48.6000000000000014 -41.0499999999999972 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+153.2656582212706269 396.71637795275592 Td
+(HIGH) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+196.8656582212706496 409.3663779527558404 88.5700000000000074 -41.0499999999999972 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+201.8656582212706496 396.71637795275592 Td
+(MoveNotice.sol:77,) Tj
+T* (96) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+285.4356582212706712 409.3663779527558404 269.8443417786651253 -41.0499999999999972 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+290.4356582212706712 396.71637795275592 Td
+(Add access control modifiers to restrict who can call these) Tj
+T* (functions, such as requiring the account owner or a designated) Tj
+T* (relayer.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+40. 368.316377952755829 108.2656582212706411 -30.6999999999999993 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+45. 355.6663779527559086 Td
+(Potential Overflow in) Tj
+T* (Time Calculations) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+148.2656582212706269 368.316377952755829 48.6000000000000014 -30.6999999999999993 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+153.2656582212706269 355.6663779527559086 Td
+(MEDIUM) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+196.8656582212706496 368.316377952755829 88.5700000000000074 -30.6999999999999993 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+201.8656582212706496 355.6663779527559086 Td
+(MoveNotice.sol:87) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+285.4356582212706712 368.316377952755829 269.8443417786651253 -30.6999999999999993 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+290.4356582212706712 355.6663779527559086 Td
+(Use checked arithmetic or validate that `delay` does not cause) Tj
+T* (overflow before adding it to `postedAt`.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+40. 337.6163779527558404 108.2656582212706411 -41.0499999999999972 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+45. 324.96637795275592 Td
+(Front-Running) Tj
+T* (Vulnerability in Signature) Tj
+T* (Validation) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+148.2656582212706269 337.6163779527558404 48.6000000000000014 -41.0499999999999972 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+153.2656582212706269 324.96637795275592 Td
+(MEDIUM) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+196.8656582212706496 337.6163779527558404 88.5700000000000074 -41.0499999999999972 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+201.8656582212706496 324.96637795275592 Td
+(MoveNotice.sol:81,) Tj
+T* (99) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+285.4356582212706712 337.6163779527558404 269.8443417786651253 -41.0499999999999972 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+290.4356582212706712 324.96637795275592 Td
+(Increment the nonce before performing signature validation to) Tj
+T* (prevent replay attacks.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+40. 296.566377952755829 108.2656582212706411 -30.6999999999999993 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+45. 283.9163779527558518 Td
+(Unbounded Loop in) Tj
+T* (`resolveFinal` Function) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+148.2656582212706269 296.566377952755829 48.6000000000000014 -30.6999999999999993 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+153.2656582212706269 283.9163779527558518 Td
+(LOW) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+196.8656582212706496 296.566377952755829 88.5700000000000074 -30.6999999999999993 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+201.8656582212706496 283.9163779527558518 Td
+(MoveNotice.sol:116) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+285.4356582212706712 296.566377952755829 269.8443417786651253 -30.6999999999999993 re
+f
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+290.4356582212706712 283.9163779527558518 Td
+(Ensure that the loop terminates early if necessary and consider) Tj
+T* (adding a gas limit check.) Tj
+ET
+0.78 G
+0.5670000000000001 w
+0.78 G
+0. w
+0.78 G
+0.5670000000000001 w
+0.78 G
+0.5670000000000001 w
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+227.5977952755905562 19.8427559055116944 Td
+(Page 1 of 1 - Powered by QoreChain AI) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R ]
+/Count 1
+>>
+endobj
+5 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+6 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 5 0 R
+/F2 6 0 R
+/F3 7 0 R
+/F4 8 0 R
+/F5 9 0 R
+/F6 10 0 R
+/F7 11 0 R
+/F8 12 0 R
+/F9 13 0 R
+/F10 14 0 R
+/F11 15 0 R
+/F12 16 0 R
+/F13 17 0 R
+/F14 18 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+19 0 obj
+<<
+/Producer (jsPDF 4.0.0)
+/CreationDate (D:20261124210052+01'00')
+>>
+endobj
+20 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000007242 00000 n 
+0000009059 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000007299 00000 n 
+0000007424 00000 n 
+0000007554 00000 n 
+0000007687 00000 n 
+0000007824 00000 n 
+0000007947 00000 n 
+0000008076 00000 n 
+0000008208 00000 n 
+0000008344 00000 n 
+0000008472 00000 n 
+0000008599 00000 n 
+0000008728 00000 n 
+0000008861 00000 n 
+0000008963 00000 n 
+0000009307 00000 n 
+0000009393 00000 n 
+trailer
+<<
+/Size 21
+/Root 20 0 R
+/Info 19 0 R
+/ID [ <9C284A7A1CD4C82074B64D324E63E576> <9C284A7A1CD4C82074B64D324E63E576> ]
+>>
+startxref
+9497
+%%EOF
