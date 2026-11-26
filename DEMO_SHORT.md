@@ -23,7 +23,7 @@ Show — In Guarded send, check A2 and show “Refused.” Select the suggested 
 Voiceover — GuardedPay refuses the old address and returns the new one for review. The sender can verify that address before deciding whether to pay.
 
 1:06–1:15
-Show — The testnet deployment and the README’s 91 passing tests.
+Show — The testnet deployment and the README’s 100 passing tests.
 Voiceover — Both contracts run on QoreChain Testnet. Use the notice as a first check and confirm the new address with its owner.
 
 1:15–1:18

@@ -47,12 +47,22 @@ Concatenate the following bytes with Solidity `abi.encodePacked`. Tags are liter
 
 ## Contracts and public events
 
-The only supported network is **QoreChain Testnet**, Cosmos `qorechain-diana`, EVM `9800` (`0x2648`). Switch the explorer to Testnet when following transaction links. [Network details](https://docs.qorechain.io/appendix/networks/) · [Explorer](https://explore.qore.network)
+The only supported network is **QoreChain Testnet**, Cosmos `qorechain-diana`, EVM `9800` (`0x2648`). The explorer opens on Mainnet by default, so select **Testnet** in its header before opening these links. Explorer transaction pages use the Cosmos transaction hash, not the 0x EVM hash. [Network details](https://docs.qorechain.io/appendix/networks/) · [Explorer](https://explore.qore.network)
 
 | Contract | EVM address | Deployment |
 |---|---|---|
-| MoveNotice | `0x4275d4514c3b268A985975a97A9855556A8f90D8` | [Testnet receipt](https://explore.qore.network/tx/0x3f5779f7bd98813bf738b7e118481030c980cf6ae24520d9fd6991d03bf43372) |
-| GuardedPay | `0x78e20EC4A434C2a306928885c9a4f20f99C28f49` | [Testnet receipt](https://explore.qore.network/tx/0xce6d2e6482abb6dc9f8c36f20bd7645087dc2595ff338dfadb3097aaf8f5e4dc) |
+| MoveNotice | `0x4275d4514c3b268A985975a97A9855556A8f90D8` | [Explorer: deploy tx](https://explore.qore.network/tx/16FBE409A77A816F2C70D9AA0364093AFE8B5063A213D60917FE00070ADA294A) · [contract account](https://explore.qore.network/address/0x4275d4514c3b268A985975a97A9855556A8f90D8) |
+| GuardedPay | `0x78e20EC4A434C2a306928885c9a4f20f99C28f49` | [Explorer: deploy tx](https://explore.qore.network/tx/181C66BB8E3DA1F973E5FB124BF59FC167824A5CAF7C3107F8BC61A8F38CB727) |
+
+Testnet rehearsal transactions (all succeeded):
+
+| Action | Block | EVM tx hash | Explorer (Testnet) |
+|---|---|---|---|
+| MoveNotice deploy | 10,569,909 | `0x3f5779f7…bf43372` | [16FBE409…ADA294A](https://explore.qore.network/tx/16FBE409A77A816F2C70D9AA0364093AFE8B5063A213D60917FE00070ADA294A) |
+| GuardedPay deploy | 10,569,910 | `0xce6d2e64…f8f5e4dc` | [181C66BB…F38CB727](https://explore.qore.network/tx/181C66BB8E3DA1F973E5FB124BF59FC167824A5CAF7C3107F8BC61A8F38CB727) |
+| Move posted (account A1) | 10,571,248 | `0x093af84c…5d011c67` | [CD668AD8…662284329](https://explore.qore.network/tx/CD668AD81880DBEE2A8BB5A624B5F4A0C05B1533EFF17AB07463FBD662284329) |
+| Move cancelled (account A1) | 10,571,267 | `0x330d769e…1267716a1` | [95B7B5E5…007D04554](https://explore.qore.network/tx/95B7B5E576FDBCF3AFE52BB0CA07F587D24998307016D0F6C8353D8007D04554) |
+| Move posted (account A2) | 10,571,347 | `0x2d99cd8c…0f91e5b9f` | [54823C4F…0235DDDC](https://explore.qore.network/tx/54823C4F9D17FDFFDDC853F66FFEA424A8799DF06FE5B3C223C43B190235DDDC) |
 
 The [deployment manifest](deployments/testnet.json) records the public addresses, deployment block and transaction hashes. The `pnpm notice resolve <address>` command shows the EVM and `qor1…` encodings of the same 20 bytes. `pnpm notice status` shows both encodings for the configured account.
 
